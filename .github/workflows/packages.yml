@@ -1,0 +1,66 @@
+name: Build Packages
+
+on:
+  release:
+    types:
+      - published
+    tags:
+      - '!*rc*'
+jobs:
+  build_rpm_7:
+    name: Build CentOS 7 RPM
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Get Tag name
+        id: tag_name
+        shell: python
+        run: |
+          import os
+          tag_name=os.environ['GITHUB_REF'].replace("refs/tags/", "")
+          print("::set-output name=TAGNAME::{}".format(tag_name))
+
+      - uses: actions/checkout@v2
+
+      - uses: addnab/docker-run-action@v1
+        with:
+          image: centos:7
+          options: -v ${{github.workspace}}:/source
+          run: |
+            bash /source/scripts/rpm_build.sh ${{ steps.tag_name.outputs.TAGNAME }}
+
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref }}
+          overwrite: true
+          file: rpmbuild/RPMS/x86_64/nova-agent-${{ steps.tag_name.outputs.TAGNAME }}-1.el7.x86_64.rpm
+          asset_name: nova-agent-${{ steps.tag_name.outputs.TAGNAME }}-1.el7.x86_64.rpm
+
+  build_rpm_8:
+    name: Build CentOS 8 RPM
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Get Tag name
+        id: tag_name
+        shell: python
+        run: |
+          import os
+          tag_name=os.environ['GITHUB_REF'].replace("refs/tags/", "")
+          print("::set-output name=TAGNAME::{}".format(tag_name))
+
+      - uses: actions/checkout@v2
+
+      - uses: addnab/docker-run-action@v1
+        with:
+          image: centos:8
+          options: -v ${{github.workspace}}:/source
+          run: |
+            bash /source/scripts/rpm_build.sh ${{ steps.tag_name.outputs.TAGNAME }}
+
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref }}
+          overwrite: true
+          file: rpmbuild/RPMS/x86_64/nova-agent-${{ steps.tag_name.outputs.TAGNAME }}-1.el8.x86_64.rpm
+          asset_name: nova-agent-${{ steps.tag_name.outputs.TAGNAME }}-1.el8.x86_64.rpm
